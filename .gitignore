@@ -1,2 +1,4 @@
 .env
 venv/*
+scratchpad.ipynb
+__pycache__

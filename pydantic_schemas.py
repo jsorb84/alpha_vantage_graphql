@@ -1,18 +1,4 @@
-from os import getenv
-from alpha_vantage.fundamentaldata import FundamentalData
-from typing import Literal, List, Union, Annotated
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
-import strawberry
-from pandas import DataFrame
-
-load_dotenv()
-key = getenv("AV_KEY")
-av = FundamentalData(key=key)
-
-type FloatOrNone = Annotated[
-    Union[float, Literal["None"]], strawberry.union("FloatOrNone")
-]
 
 
 class IncomeStatementSchema(BaseModel):
@@ -90,67 +76,6 @@ class IncomeStatementSchema(BaseModel):
     ebit: str = Field(title="EBIT", validation_alias="ebit")
     ebitda: str = Field(title="EBITDA", validation_alias="ebitda")
     net_income: str = Field(title="Net Income", validation_alias="netIncome")
-
-
-@strawberry.experimental.pydantic.type(IncomeStatementSchema, all_fields=True)
-class IncomeStatementType:
-    """The class "IncomeStatementType" is defined."""
-
-    pass
-
-
-def manipulate_is(data: DataFrame) -> List[IncomeStatementType]:
-    """
-    The function `manipulate_is` converts a DataFrame into a list of IncomeStatementType objects by
-    validating the data and converting it into the appropriate format.
-
-    :param data: The `data` parameter is a DataFrame object
-    :type data: DataFrame
-    :return: The function `manipulate_is` returns a list of `IncomeStatementType` objects.
-    """
-    as_json = data.to_dict(orient="index")
-    items = as_json.values()
-    l: List[IncomeStatementType] = []
-    for i in items:
-        pymodel = IncomeStatementSchema.model_validate(i)
-        gqltype: IncomeStatementType = IncomeStatementType.from_pydantic(pymodel)
-        l.append(gqltype)
-    return l
-
-
-@strawberry.type
-class INCOME_STATEMENT:
-    """The `INCOME_STATEMENT` class provides methods to retrieve and manipulate annual and quarterly income
-    statement data for a given stock symbol."""
-
-    @strawberry.field
-    def get_income_statement_annual(self, symbol: str) -> List[IncomeStatementType]:
-        """
-        The function `get_income_statement_annual` retrieves annual income statement data for a given
-        stock symbol and returns a manipulated version of the data.
-
-        :param symbol: The symbol parameter is a string that represents the stock symbol of a company.
-        It is used to retrieve the income statement data for that specific company
-        :type symbol: str
-        :return: a list of IncomeStatementType objects.
-        """
-        data, _ = av.get_income_statement_annual(symbol)
-        data: DataFrame
-        return manipulate_is(data)
-
-    @strawberry.field
-    def get_income_statement_quarterly(self, symbol: str) -> List[IncomeStatementType]:
-        """
-        The function `get_income_statement_quarterly` retrieves quarterly income statement data for a
-        given stock symbol and returns a manipulated version of the data.
-
-        :param symbol: The "symbol" parameter is a string that represents the stock symbol of a company
-        :type symbol: str
-        :return: a list of IncomeStatementType objects.
-        """
-        data, _ = av.get_income_statement_quarterly(symbol)
-        data: DataFrame
-        return manipulate_is(data)
 
 
 class CashFlowSchema(BaseModel):
@@ -257,67 +182,6 @@ class CashFlowSchema(BaseModel):
         title="Change in Exchange Rate", validation_alias="changeInExchangeRate"
     )
     net_income: str = Field(title="Net Income", validation_alias="netIncome")
-
-
-@strawberry.experimental.pydantic.type(CashFlowSchema, all_fields=True)
-class CashFlowType:
-    pass
-
-
-def manipulate_cf(data: DataFrame) -> List[CashFlowType]:
-    """
-    The function `manipulate_cf` takes a DataFrame as input, converts it to a dictionary, validates the
-    data using a CashFlowSchema model, and then converts the validated data to a list of CashFlowType
-    objects.
-
-    :param data: The `data` parameter is a DataFrame object
-    :type data: DataFrame
-    :return: The function `manipulate_cf` returns a list of `CashFlowType` objects.
-    """
-
-    as_json = data.to_dict(orient="index")
-    items = as_json.values()
-    l: List[CashFlowType] = []
-    for i in items:
-        pymodel = CashFlowSchema.model_validate(i)
-        gqltype: CashFlowType = CashFlowType.from_pydantic(pymodel)
-        l.append(gqltype)
-    return l
-
-
-@strawberry.type
-class CASH_FLOW:
-    """The `CASH_FLOW` class provides methods to retrieve and manipulate annual and quarterly cash flow
-    data for a given stock symbol."""
-
-    @strawberry.field
-    def get_cash_flow_annual(self, symbol: str) -> List[CashFlowType]:
-        """
-        The function `get_cash_flow_annual` retrieves annual cash flow data for a given stock symbol and
-        returns a manipulated version of the data.
-
-        :param symbol: The symbol parameter is a string that represents the stock symbol of a company.
-        It is used to retrieve the cash flow data for that specific company
-        :type symbol: str
-        :return: a list of CashFlowType objects.
-        """
-        data, _ = av.get_cash_flow_annual(symbol)
-        data: DataFrame
-        return manipulate_cf(data)
-
-    @strawberry.field
-    def get_cash_flow_quarterly(self, symbol: str) -> List[CashFlowType]:
-        """
-        The function `get_cash_flow_quarterly` retrieves quarterly cash flow data for a given stock symbol
-        and returns a manipulated version of the data.
-
-        :param symbol: The "symbol" parameter is a string that represents the stock symbol of a company
-        :type symbol: str
-        :return: a list of CashFlowType objects.
-        """
-        data, _ = av.get_cash_flow_quarterly(symbol)
-        data: DataFrame
-        return manipulate_cf(data)
 
 
 class BalanceSheetSchema(BaseModel):
@@ -434,64 +298,240 @@ class BalanceSheetSchema(BaseModel):
     )
 
 
-@strawberry.experimental.pydantic.type(BalanceSheetSchema, all_fields=True)
-class BalanceSheetType:
-    """The class BalanceSheetType is defined."""
-
-    pass
-
-
-def manipulate_bs(data: DataFrame) -> List[BalanceSheetType]:
+class OverviewSchema(BaseModel):
     """
-    The function `manipulate_bs` takes a DataFrame as input, converts it to a dictionary, validates the
-    data using a BalanceSheetSchema model, and then converts the validated data to a list of BalanceSheetType
-    objects.
-
-    :param data: The `data` parameter is a DataFrame object
-    :type data: DataFrame
-    :return: The function `manipulate_bs` returns a list of `BalanceSheetType` objects.
+    Overview for AlphaVantage API\n\n
     """
 
-    as_json = data.to_dict(orient="index")
-    items = as_json.values()
-    l: List[BalanceSheetType] = []
-    for i in items:
-        pymodel = BalanceSheetSchema.model_validate(i)
-        gqltype: BalanceSheetType = BalanceSheetType.from_pydantic(pymodel)
-        l.append(gqltype)
-    return l
+    symbol: str = Field(title="Symbol", validation_alias="Symbol")
+    asset_type: str = Field(title="Asset Type", validation_alias="AssetType")
+    name: str = Field(title="Name", validation_alias="Name")
+    description: str = Field(title="Description", validation_alias="Description")
+    cik: str = Field(title="CIK", validation_alias="CIK")
+    exchange: str = Field(title="Exchange", validation_alias="Exchange")
+    currency: str = Field(title="Currency", validation_alias="Currency")
+    country: str = Field(title="Country", validation_alias="Country")
+    sector: str = Field(title="Sector", validation_alias="Sector")
+    industry: str = Field(title="Industry", validation_alias="Industry")
+    address: str = Field(title="Address", validation_alias="Address")
+    fiscal_year_end: str = Field(
+        title="Fiscal Year End", validation_alias="FiscalYearEnd"
+    )
+    latest_quarter: str = Field(
+        title="Latest Quarter", validation_alias="LatestQuarter"
+    )
+    market_capitalization: str = Field(
+        title="Market Capitalization", validation_alias="MarketCapitalization"
+    )
+    ebitda: str = Field(title="EBITDA", validation_alias="EBITDA")
+    pe_ratio: str = Field(title="PE Ratio", validation_alias="PERatio")
+    peg_ratio: str = Field(title="PEG Ratio", validation_alias="PEGRatio")
+    book_value: str = Field(title="Book Value", validation_alias="BookValue")
+    dividend_per_share: str = Field(
+        title="Dividend Per Share", validation_alias="DividendPerShare"
+    )
+    dividend_yield: str = Field(
+        title="Dividend Yield", validation_alias="DividendYield"
+    )
+    eps: str = Field(title="EPS", validation_alias="EPS")
+    revenue_per_share_ttm: str = Field(
+        title="Revenue Per Share TTM", validation_alias="RevenuePerShareTTM"
+    )
+    profit_margin: str = Field(title="Profit Margin", validation_alias="ProfitMargin")
+    operating_margin_ttm: str = Field(
+        title="Operating Margin TTM", validation_alias="OperatingMarginTTM"
+    )
+    return_on_assets_ttm: str = Field(
+        title="Return on Assets TTM", validation_alias="ReturnOnAssetsTTM"
+    )
+    return_on_equity_ttm: str = Field(
+        title="Return on equity TTM", validation_alias="ReturnOnEquityTTM"
+    )
+    revenue_ttm: str = Field(title="Revenue TTM", validation_alias="RevenueTTM")
+    gross_profit_ttm: str = Field(
+        title="Gross Profit TTM", validation_alias="GrossProfitTTM"
+    )
+    diluted_eps_ttm: str = Field(
+        title="Diluted EPS TTM", validation_alias="DilutedEPSTTM"
+    )
+    quarterly_earnings_growth_yoy: str = Field(
+        title="Quarterly Earnings Growth YOY",
+        validation_alias="QuarterlyEarningsGrowthYOY",
+    )
+    quarterly_revenue_growth_yoy: str = Field(
+        title="Quarterly Revenue Growth YOY",
+        validation_alias="QuarterlyRevenueGrowthYOY",
+    )
+    analyst_target_price: str = Field(
+        title="Analyst Target Price", validation_alias="AnalystTargetPrice"
+    )
+    trailing_pe: str = Field(title="Trailing PE", validation_alias="TrailingPE")
+    forward_pe: str = Field(title="Forward PE", validation_alias="ForwardPE")
+    price_to_sales_ratio_ttm: str = Field(
+        title="Price to Sales Ratio TTM", validation_alias="PriceToSalesRatioTTM"
+    )
+    price_to_book_ratio: str = Field(
+        title="Price to Book Ratio", validation_alias="PriceToBookRatio"
+    )
+    ev_to_revenue: str = Field(title="EV to Revenue", validation_alias="EVToRevenue")
+    ev_to_ebitda: str = Field(title="EV to EBITDA", validation_alias="EVToEBITDA")
+    beta: str = Field(title="Beta", validation_alias="Beta")
+    week_high_52: str = Field(title="52 Week High", validation_alias="52WeekHigh")
+    week_low_52: str = Field(title="52 Week Low", validation_alias="52WeekLow")
+    day_moving_average_50: str = Field(
+        title="50 Day Moving Average", validation_alias="50DayMovingAverage"
+    )
+    day_moving_average_200: str = Field(
+        title="200 Day Moving Average", validation_alias="200DayMovingAverage"
+    )
+    shares_outstanding: str = Field(
+        title="Shares Outstanding", validation_alias="SharesOutstanding"
+    )
+    dividend_date: str = Field(title="Dividend Date", validation_alias="DividendDate")
+    ex_dividend_date: str = Field(
+        title="Ex Dividend Date", validation_alias="ExDividendDate"
+    )
 
 
-@strawberry.type
-class BALANCE_SHEET:
-    """The `BALANCE_SHEET` class provides methods to retrieve and manipulate annual and quarterly balance sheet
-    data for a given stock symbol."""
+class CryptoMetadataSchema(BaseModel):
+    """The CryptoMetadataSchema class defines the schema of the response returned by the `metadata` method."""
 
-    @strawberry.field
-    def get_balance_sheet_annual(self, symbol: str) -> List[BalanceSheetType]:
+    information: str = Field(
+        ...,
+        title="The information of the cryptocurrency.",
+        validation_alias="1. Information",
+    )
+    digital_currency_code: str = Field(
+        ...,
+        title="The code of the cryptocurrency.",
+        validation_alias="2. Digital Currency Code",
+    )
+    digital_currency_name: str = Field(
+        ...,
+        title="The name of the cryptocurrency.",
+        validation_alias="3. Digital Currency Name",
+    )
+    market_code: str = Field(
+        ...,
+        title="The code of the market.",
+        validation_alias="4. Market Code",
+    )
+    market_name: str = Field(
+        ...,
+        title="The name of the market.",
+        validation_alias="5. Market Name",
+    )
+    last_refreshed: str = Field(
+        ...,
+        title="The date and time the metadata was last refreshed.",
+        validation_alias="6. Last Refreshed",
+    )
+    interval: str = Field(
+        ...,
+        title="The interval of the metadata.",
+        validation_alias="7. Interval",
+    )
+    output_size: str = Field(
+        ..., title="The output size of the metadata.", validation_alias="8. Output Size"
+    )
+    time_zone: str = Field(
+        ..., title="The timezone of the metadata.", validation_alias="9. Time Zone"
+    )
+
+
+class CurrencyExchangeRateSchema(BaseModel):
+    """The CurrencyExchangeRateSchema class defines the schema of the response returned by the
+    `exchange_rate` method."""
+
+    from_currency_code: str = Field(
+        ...,
+        title="The code of the currency to convert from.",
+        validation_alias="1. From_Currency Code",
+    )
+    from_currency_name: str = Field(
+        ...,
+        title="The name of the currency to convert from.",
+        validation_alias="2. From_Currency Name",
+    )
+    to_currency_code: str = Field(
+        ...,
+        title="The code of the currency to convert to.",
+        validation_alias="3. To_Currency Code",
+    )
+    to_currency_name: str = Field(
+        ...,
+        title="The name of the currency to convert to.",
+        validation_alias="4. To_Currency Name",
+    )
+    exchange_rate: str = Field(
+        ...,
+        title="The exchange rate between the two currencies.",
+        validation_alias="5. Exchange Rate",
+    )
+    last_refreshed: str = Field(
+        ...,
+        title="The date and time the exchange rate was last refreshed.",
+        validation_alias="6. Last Refreshed",
+    )
+    timezone: str = Field(
+        ..., title="The timezone of the exchange rate.", validation_alias="7. Time Zone"
+    )
+    bid_price: str = Field(
+        ...,
+        title="The bid price of the exchange rate.",
+        validation_alias="8. Bid Price",
+    )
+    ask_price: str = Field(
+        ...,
+        title="The ask price of the exchange rate.",
+        validation_alias="9. Ask Price",
+    )
+
+
+class TechIndicatorMetadataSchema(BaseModel):
+    """The TechIndicatorMetadataSchema class defines the schema of the response returned by the
+    `get_metadata` method."""
+
+    symbol: str = Field(
+        ...,
+        title="The symbol of the stock.",
+        validation_alias="1: Symbol",
+    )
+    indicator: str = Field(
+        ...,
+        title="The indicator of the stock.",
+        validation_alias="2: Indicator",
+    )
+    last_refreshed: str = Field(
+        ...,
+        title="The date and time the data was last refreshed.",
+        validation_alias="3: Last Refreshed",
+    )
+    interval: str = Field(
+        ...,
+        title="The interval of the data.",
+        validation_alias="4: Interval",
+    )
+    time_period: int = Field(
+        ...,
+        title="The time period of the data.",
+        validation_alias="5: Time Period",
+    )
+    series_type: str = Field(
+        ...,
+        title="The series type of the data.",
+        validation_alias="6: Series Type",
+    )
+    time_zone: str = Field(
+        ...,
+        title="The time zone of the data.",
+        validation_alias="7: Time Zone",
+    )
+
+    def __str__(self) -> str:
+        """Returns the string representation of the class.
+
+        Returns:
+            str: `SYMBOL:INDICATOR`
         """
-        The function `get_balance_sheet_annual` retrieves annual balance sheet data for a given stock symbol and
-        returns a manipulated version of the data.
-
-        :param symbol: The symbol parameter is a string that represents the stock symbol of a company.
-        It is used to retrieve the balance sheet data for that specific company
-        :type symbol: str
-        :return: a list of BalanceSheetType objects.
-        """
-        data, _ = av.get_balance_sheet_annual(symbol)
-        data: DataFrame
-        return manipulate_bs(data)
-
-    @strawberry.field
-    def get_balance_sheet_quarterly(self, symbol: str) -> List[BalanceSheetType]:
-        """
-        The function `get_balance_sheet_quarterly` retrieves quarterly balance sheet data for a given stock symbol
-        and returns a manipulated version of the data.
-
-        :param symbol: The "symbol" parameter is a string that represents the stock symbol of a company
-        :type symbol: str
-        :return: a list of BalanceSheetType objects.
-        """
-        data, _ = av.get_balance_sheet_quarterly(symbol)
-        data: DataFrame
-        return manipulate_bs(data)
+        return f"{self.symbol}:{self.indicator}"

@@ -4,6 +4,10 @@
 
 ## Setup
 
+## Now with `Dockerfile`!
+
+> For a quick and simple setup, just spin up the Docket image! Your instance will be available at http://localhost/graphql - Make sure to provide your API Key as `AV_KEY` environment variable
+
 1. Install Requirements /w `pipenv` or `requirements.txt`
 2. Create / Edit `.env` file and add your AlphaVantage API Key as an environment variable with the key `AV_KEY`
 3. Start the `uvicorn` server with `uvicorn app:app --reload`
@@ -11,18 +15,63 @@
 
 ## Available APIs (currently)
 
-### Series
+- `getFundementalData`
+- - `getBalanceSheetAnnual(symbol: String!)`
+- - `getBalanceSheetQuarterly(symbol: String!)`
+- - `getCompanyOverview(symbol: String!)`
+- - `getCashFlowAnnual(symbol: String!)`
+- - `getCashFlowQuarterly(symbol: String!)`
+- - `getIncomeStatementAnnual(symbol: String!)`
+- - `getIncomeStatementQuarterly(symbol: String!)`
+- `getCrypto`
+- - `exchangeRate(fromCurrency: String!, toCurrency: String!)`
+- - `intraday(symbol: String!, market: String! = "USD", interval: String! = "5min")`
+- `getTechnicalAverages`
+- - Parameters for each
+- - - symbol: `String`
+- - - interval: `String` = "weekly"
+- - - timePeriod: `Int` = 60
+- - - seriesType: `String` = "open"
+- - `sma(...)`
+- - `ema(...)`
+- - `wma(...)`
+- - `dema(...)`
+- - `tema(...)`
+- `getTimeSeries` & `getTimeSeriesAdjusted`
+- - `intraday(symbol: String!, interval: String! = "15min", outputsize: String! = "compact")`
+- - `daily(symbol: String!, outputsize: String! = "compact")`
+- - `monthly(symbol: String!)`
+- - `weekly(symbol: String!)`
 
-- `TimeSeries`
-- `TimeSeriesAdjusted`
+## Example
 
-### Fundemental Information
+```sql
+query {
+  getTechnicalAverages {
+    sma(symbol:"AAPL", interval:"weekly") {
+      Analysis {
+        date
+        average
+      }
+    }
+    ema(symbol:"AAPL", interval:"weekly") {
+      Analysis {
+        date
+        average
+      }
+    }
 
-- `BalanceSheet`
-- - Annual & Quarterly
-- `CashFlow`
-- - Annual & Quarterly
-- `IncomeStatement`
-- - Annual & Quarterly
+  }
+}
+```
 
-**_with more coming soon!_**
+```sql
+query {
+  getTimeSeries {
+    monthly(symbol:"AAPL") {
+      open
+      close
+    }
+  }
+}
+```

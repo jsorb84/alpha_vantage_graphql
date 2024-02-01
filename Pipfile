@@ -10,6 +10,8 @@ redis = "*"
 strawberry-graphql = {extras = ["fastapi"], version = "*"}
 alpha-vantage = "*"
 pandas = "*"
+multidict = "*"
+pytest = "*"
 
 [dev-packages]
 
