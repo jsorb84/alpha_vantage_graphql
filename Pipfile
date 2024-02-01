@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = {extras = ["all"], version = "*"}
+pydantic = "*"
+redis = "*"
+strawberry-graphql = {extras = ["fastapi"], version = "*"}
+alpha-vantage = "*"
+pandas = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
