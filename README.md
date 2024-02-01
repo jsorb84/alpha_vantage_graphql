@@ -5,8 +5,9 @@
 ## Setup
 
 1. Install Requirements /w `pipenv` or `requirements.txt`
-2. Start the `uvicorn` server with `uvicorn app:app --reload`
-3. Navigate to [`http://localhost:8000/graphql`](http://localhost:8000/graphql)
+2. Create / Edit `.env` file and add your AlphaVantage API Key as an environment variable with the key `AV_KEY`
+3. Start the `uvicorn` server with `uvicorn app:app --reload`
+4. Navigate to [`http://localhost:8000/graphql`](http://localhost:8000/graphql)
 
 ## Available APIs (currently)
 
