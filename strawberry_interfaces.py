@@ -1,4 +1,36 @@
 import strawberry
+import dataclasses
+from os import getenv
+from typing import Optional, Required, TypedDict
+from pydantic import BaseModel, Field
+from strawberry.types.info import Info as _Info, RootValueType
+from strawberry_permissions import GraphQLContext
+
+# @dataclasses.dataclass
+# class API_Parameters[M: BaseModel | None]:
+#     """Wrapper for all Alpha Vantage APIs"""
+
+#     apikey: str = dataclasses.field(default=getenv("AV_KEY"))
+#     function: str = dataclasses.field(default="TIME_SERIES_WEEKLY")
+#     symbol: str | None = dataclasses.field(default=None)
+#     interval: str | None = dataclasses.field(default=None)
+#     maturity: str | None = dataclasses.field(default=None)
+#     datatype: str = dataclasses.field(default="json")
+#     validation_model: type[M] | None = dataclasses.field(default=None)
+type Info = _Info[GraphQLContext, RootValueType]
+
+
+class API_Parameters[M: BaseModel](BaseModel):
+    """Wrapper for all Alpha Vantage APIs"""
+
+    apikey: str = Field(default=getenv("AV_KEY"))
+    function: str = Field(default="TIME_SERIES_WEEKLY")
+    symbol: str | None = Field(default=None)
+    interval: str | None = Field(default=None)
+    maturity: str | None = Field(default=None)
+    datatype: str = Field(default="json")
+    validation_model: type[M] | None = Field(default=None)
+    info: Info | None = Field(default=None)
 
 
 @strawberry.type

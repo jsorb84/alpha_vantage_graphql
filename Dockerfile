@@ -50,4 +50,4 @@ COPY . .
 
 EXPOSE 80
 # Run the application.
-CMD pipenv run uvicorn app:app --host 0.0.0.0 --port 80
+CMD pipenv run uvicorn app:app --host 0.0.0.0 --port ${PORT}

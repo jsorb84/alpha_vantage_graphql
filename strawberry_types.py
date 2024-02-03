@@ -1,9 +1,14 @@
+from typing import List, Literal, Unpack
 import strawberry
-from requests import get
-from typing import List, Literal
-
+from strawberry.types.info import Info as _Info, RootValueType
 from vantage_wrapper import Vantage
-from strawberry_interfaces import TimeSeriesAdjustedInterface, TimeSeriesInterface
+from strawberry_interfaces import (
+    TimeSeriesAdjustedInterface,
+    TimeSeriesInterface,
+    API_Parameters,
+)
+from strawberry_permissions import GraphQLContext
+from strawberry_permissions import IsAuthenticated
 from pydantic_schemas import (
     CurrencyExchangeRateSchema,
     TechIndicatorMetadataSchema,
@@ -12,12 +17,13 @@ from pydantic_schemas import (
     IncomeStatementSchema,
     CashFlowSchema,
     BalanceSheetSchema,
+    GlobalQuoteSchema,
 )
+from decorators import _make_api_call
 from pandas import DataFrame
 
 type Intervals = Literal["1min", "5min", "15min", "30min", "60min"]
-
-vantage = Vantage()
+type Info = _Info[GraphQLContext, RootValueType]
 
 
 @strawberry.experimental.pydantic.type(CurrencyExchangeRateSchema, all_fields=True)
@@ -29,7 +35,6 @@ class CurrencyExchangeRateType:
 
 @strawberry.type(name="TimeSeriesAdjusted")
 class TIME_SERIES_ADJUSTED:
-
     """The code block you provided defines a GraphQL type called `TIME_SERIES_ADJUSTED` using the
     `@strawberry.type` decorator. This type has three fields: `daily`, `monthly`, and `weekly`. Each
     field is decorated with `@strawberry.field` and has its own resolver function. The resolver functions
@@ -64,7 +69,10 @@ class TIME_SERIES_ADJUSTED:
 
     @strawberry.field
     def daily(
-        self, symbol: str, outputsize: str = "compact"
+        self,
+        info: Info,
+        symbol: str,
+        outputsize: str = "compact",
     ) -> List[TimeSeriesAdjustedInterface]:
         """
         The function `daily` retrieves daily adjusted stock data for a given symbol and returns it as a
@@ -78,12 +86,14 @@ class TIME_SERIES_ADJUSTED:
         :type outputsize: str (optional)
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
-        # !! pylint: disable=W0613
+
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_daily_adjusted(symbol, outputsize)
         return self.process_timeseries_adjusted(data)
 
     @strawberry.field
-    def monthly(self, symbol: str) -> List[TimeSeriesAdjustedInterface]:
+    def monthly(self, info: Info, symbol: str) -> List[TimeSeriesAdjustedInterface]:
         """
         The function `monthly` retrieves monthly adjusted time series data for a given stock symbol and
         processes it.
@@ -94,12 +104,13 @@ class TIME_SERIES_ADJUSTED:
         :type symbol: str
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_monthly_adjusted(symbol)
         return self.process_timeseries_adjusted(data)
 
     @strawberry.field
-    def weekly(self, symbol: str) -> List[TimeSeriesAdjustedInterface]:
+    def weekly(self, info: Info, symbol: str) -> List[TimeSeriesAdjustedInterface]:
         """
         The function `weekly` retrieves weekly adjusted time series data for a given stock symbol and
         processes it.
@@ -110,7 +121,8 @@ class TIME_SERIES_ADJUSTED:
         :type symbol: str
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_weekly_adjusted(symbol)
         return self.process_timeseries_adjusted(data)
 
@@ -162,7 +174,11 @@ class TIME_SERIES:
 
     @strawberry.field
     def intraday(
-        self, symbol: str, interval: str = "15min", outputsize: str = "compact"
+        self,
+        info: Info,
+        symbol: str,
+        interval: str = "15min",
+        outputsize: str = "compact",
     ) -> List[TimeSeriesInterface]:
         """
         The `intraday` function retrieves intraday stock data for a given symbol, interval, and output
@@ -181,13 +197,14 @@ class TIME_SERIES:
         :type outputsize: str (optional)
         :return: a list of TimeSeriesInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_intraday(symbol, interval, outputsize)
         return self.process_timeseries(data)
 
     @strawberry.field
     def daily(
-        self, symbol: str, outputsize: str = "compact"
+        self, info: Info, symbol: str, outputsize: str = "compact"
     ) -> List[TimeSeriesInterface]:
         """
         The function `daily` retrieves daily stock data for a given symbol and returns it as a list of
@@ -201,12 +218,13 @@ class TIME_SERIES:
         :type outputsize: str (optional)
         :return: a list of TimeSeriesInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_daily(symbol, outputsize)
         return self.process_timeseries(data)
 
     @strawberry.field
-    def monthly(self, symbol: str) -> List[TimeSeriesInterface]:
+    def monthly(self, info: Info, symbol: str) -> List[TimeSeriesInterface]:
         """
         The function retrieves monthly time series data for a given stock symbol and processes it.
 
@@ -216,12 +234,13 @@ class TIME_SERIES:
         :type symbol: str
         :return: a list of TimeSeriesInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_monthly(symbol)
         return self.process_timeseries(data)
 
     @strawberry.field
-    def weekly(self, symbol: str) -> List[TimeSeriesInterface]:
+    def weekly(self, info: Info, symbol: str) -> List[TimeSeriesInterface]:
         """
         The function `weekly` retrieves weekly time series data for a given stock symbol and processes
         it.
@@ -232,7 +251,8 @@ class TIME_SERIES:
         :type symbol: str
         :return: a list of TimeSeriesInterface objects.
         """
-        # !! pylint: disable=W0613
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.time_series.get_weekly(symbol)
         return self.process_timeseries(data)
 
@@ -308,6 +328,7 @@ class TECHNICAL_AVERAGES:
     @strawberry.field
     def sma(
         self,
+        info: Info,
         symbol: str,
         interval: str = "weekly",
         time_period: int = 60,
@@ -319,6 +340,7 @@ class TECHNICAL_AVERAGES:
         :param interval: the interval of the data.
         :return: the SMA of the stock.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, metadata = vantage.tech_indicators.get_sma(
             symbol=symbol,
@@ -331,6 +353,7 @@ class TECHNICAL_AVERAGES:
     @strawberry.field
     def ema(
         self,
+        info: Info,
         symbol: str,
         interval: str = "weekly",
         time_period: int = 60,
@@ -342,6 +365,7 @@ class TECHNICAL_AVERAGES:
         :param interval: the interval of the data.
         :return: the EMA of the stock.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, metadata = vantage.tech_indicators.get_ema(
             symbol=symbol,
@@ -354,6 +378,7 @@ class TECHNICAL_AVERAGES:
     @strawberry.field
     def wma(
         self,
+        info: Info,
         symbol: str,
         interval: str = "weekly",
         time_period: int = 60,
@@ -362,6 +387,7 @@ class TECHNICAL_AVERAGES:
         """
         The function `wma` returns the Weighted Moving Average (WMA) of a stock.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, metadata = vantage.tech_indicators.get_wma(
             symbol=symbol,
@@ -374,6 +400,7 @@ class TECHNICAL_AVERAGES:
     @strawberry.field
     def dema(
         self,
+        info: Info,
         symbol: str,
         interval: str = "weekly",
         time_period: int = 60,
@@ -382,6 +409,7 @@ class TECHNICAL_AVERAGES:
         """
         The function `dema` returns the Double Exponential Moving Average (DEMA) of a stock.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, metadata = vantage.tech_indicators.get_dema(
             symbol=symbol,
@@ -394,6 +422,7 @@ class TECHNICAL_AVERAGES:
     @strawberry.field
     def tema(
         self,
+        info: Info,
         symbol: str,
         interval: str = "weekly",
         time_period: int = 60,
@@ -402,6 +431,7 @@ class TECHNICAL_AVERAGES:
         """
         The function `tema` returns the Triple Exponential Moving Average (TEMA) of a stock.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, metadata = vantage.tech_indicators.get_tema(
             symbol=symbol,
@@ -435,7 +465,7 @@ class CryptoIntraday:
 class CRYPTO_SERIES:
     @strawberry.field
     def exchange_rate(
-        self, from_currency: str, to_currency: str
+        self, info: Info, from_currency: str, to_currency: str
     ) -> CurrencyExchangeRateType:
         """
         The function `exchange_rate` returns the exchange rate between two currencies.
@@ -443,6 +473,7 @@ class CRYPTO_SERIES:
         :param to_currency: the currency to convert to.
         :return: the exchange rate between the two currencies.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.crypto_currencies.get_digital_currency_exchange_rate(
             from_currency=from_currency, to_currency=to_currency
@@ -454,41 +485,67 @@ class CRYPTO_SERIES:
         as_gql = CurrencyExchangeRateType.from_pydantic(as_model)
         return as_gql
 
+    @_make_api_call
+    def _get_intraday(
+        self, *args, **kwargs: Unpack[API_Parameters[TimeSeriesInterface]]
+    ):
+        """
+        The function `_get_intraday` is a decorator that makes an API call to the Alpha Vantage API
+        """
+        return (None, None, None)
+
     @strawberry.field
     def intraday(
         self,
+        info: Info,
         symbol: str,
         market: str = "USD",
         interval: str = "5min",
     ) -> CryptoIntraday:
-        av_url = f"https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol={symbol}&market={market}&apikey=O7RDATUJ5GCR892M&interval={interval}"
-        response = get(av_url)
-        assert response.status_code == 200, f"Error: {response.status_code}"
-        data: dict[str, dict[str, str]] = response.json()
-        series_key = f"Time Series Crypto ({interval})"
-        series: dict[str, dict[str, str]] = data.get(series_key)
-        metadata: dict[str, str] = data.get("Meta Data")
-        metadata_schema = CryptoMetadataSchema.model_validate(metadata)
-        # !! This is a bug in the schema. !!
-        # !! pylint: disable=no-member
-        metadata_type = CryptoMetadataType.from_pydantic(metadata_schema)
-        series_items = series.items()
-        series_list: List[TimeSeriesInterface] = []
-        for date, info in series_items:
-            info_type = TimeSeriesInterface(
-                date=date,
-                open=float(info["1. open"]),
-                high=float(info["2. high"]),
-                low=float(info["3. low"]),
-                close=float(info["4. close"]),
-                volume=float(info["5. volume"]),
+        """
+        Returns the intraday data for a given cryptocurrency.
+
+        :param info: The info parameter is a context object that contains information about the
+        request, including the user's authentication credentials.
+        :type info: Info
+        :param symbol: The symbol parameter is a string that represents the cryptocurrency symbol
+        for which you want to retrieve intraday data.
+        :type symbol: str
+        :param market: The "market" parameter is a string that represents the fiat currency in which
+        you want the data to be returned. It can be set to any of the supported fiat currencies,
+        including "USD", "EUR", "GBP", and "JPY". The default value is "USD".
+        :type market: str
+        :param interval: The "interval" parameter specifies the time interval between each data point
+        in the intraday time series. It can be set to values like "1min", "5min", "15min", "30min",
+        or "60min", depending on the desired granularity of the data. The default value is "5min".
+        :type interval: str
+        :return: The function returns a CryptoIntraday object, which contains the metadata and the
+        time series data.
+        """
+        data = self._get_intraday(
+            info=info,
+            symbol=symbol,
+            function="CRYPTO_INTRADAY",
+            interval=interval,
+            market=market,
+        )
+        md_schema = CryptoMetadataSchema.model_validate(
+            data["Meta Data"]  # !! pylint: disable=E1126
+        )
+        ts_list: dict[str, dict[str, str]] = data[f"Time Series Crypto ({interval})"]
+        ts_items = ts_list.items()
+        l: List[TimeSeriesInterface] = [
+            TimeSeriesInterface(
+                date=k,
+                open=float(v["1. open"]),
+                close=float(v["4. close"]),
+                high=float(v["2. high"]),
+                low=float(v["3. low"]),
+                volume=float(v["5. volume"]),
             )
-            series_list.append(info_type)
-
-        assert len(series_list) > 0, "Error: No data found."
-        assert metadata_type is not None, "Error: No metadata found."
-
-        final = CryptoIntraday(metadata=metadata_type, series=series_list)
+            for k, v in ts_items
+        ]
+        final = CryptoIntraday(metadata=md_schema, series=l)
 
         return final
 
@@ -502,6 +559,10 @@ class IncomeStatementType:
 
 @strawberry.experimental.pydantic.type(CashFlowSchema, all_fields=True)
 class CashFlowType:
+    """
+    The class "CashFlowType" is defined.
+    """
+
     pass
 
 
@@ -517,6 +578,13 @@ class OverviewType:
     """
     The class OverviewType is defined.
     """
+
+    pass
+
+
+@strawberry.experimental.pydantic.type(GlobalQuoteSchema, all_fields=True)
+class GlobalQuoteType:
+    """The class GlobalQuoteType is defined."""
 
     pass
 
@@ -585,7 +653,9 @@ class FundementalDataType:
         return l
 
     @strawberry.field
-    def get_balance_sheet_annual(self, symbol: str) -> List[BalanceSheetType]:
+    def get_balance_sheet_annual(
+        self, info: Info, symbol: str
+    ) -> List[BalanceSheetType]:
         """
         The function `get_balance_sheet_annual` retrieves annual balance sheet data for a given stock symbol and
         returns a manipulated version of the data.
@@ -595,12 +665,16 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of BalanceSheetType objects.
         """
+        vantage = Vantage(info)
+        # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_balance_sheet_annual(symbol)
         data: DataFrame
         return self.manipulate_bs(data)
 
     @strawberry.field
-    def get_balance_sheet_quarterly(self, symbol: str) -> List[BalanceSheetType]:
+    def get_balance_sheet_quarterly(
+        self, info: Info, symbol: str
+    ) -> List[BalanceSheetType]:
         """
         The function `get_balance_sheet_quarterly` retrieves quarterly balance sheet data for a given stock symbol
         and returns a manipulated version of the data.
@@ -609,13 +683,14 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of BalanceSheetType objects.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_balance_sheet_quarterly(symbol)
         data: DataFrame
         return self.manipulate_bs(data)
 
     @strawberry.field
-    def get_company_overview(self, symbol: str) -> OverviewType:
+    def get_company_overview(self, info: Info, symbol: str) -> OverviewType:
         """
         The function `get_company_overview` retrieves company overview data for a given symbol and
         returns it in a GraphQL-compatible format.
@@ -624,6 +699,7 @@ class FundementalDataType:
         :type symbol: str
         :return: an object of type `OverviewType`.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_company_overview(symbol)
         data: dict[str, str]
@@ -636,7 +712,7 @@ class FundementalDataType:
         return gqltype
 
     @strawberry.field
-    def get_cash_flow_annual(self, symbol: str) -> List[CashFlowType]:
+    def get_cash_flow_annual(self, info: Info, symbol: str) -> List[CashFlowType]:
         """
         The function `get_cash_flow_annual` retrieves annual cash flow data for a given stock symbol and
         returns a manipulated version of the data.
@@ -646,13 +722,14 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of CashFlowType objects.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_cash_flow_annual(symbol)
         data: DataFrame
         return self.manipulate_cf(data)
 
     @strawberry.field
-    def get_cash_flow_quarterly(self, symbol: str) -> List[CashFlowType]:
+    def get_cash_flow_quarterly(self, info: Info, symbol: str) -> List[CashFlowType]:
         """
         The function `get_cash_flow_quarterly` retrieves quarterly cash flow data for a given stock symbol
         and returns a manipulated version of the data.
@@ -661,13 +738,16 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of CashFlowType objects.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_cash_flow_quarterly(symbol)
         data: DataFrame
         return self.manipulate_cf(data)
 
     @strawberry.field
-    def get_income_statement_annual(self, symbol: str) -> List[IncomeStatementType]:
+    def get_income_statement_annual(
+        self, info: Info, symbol: str
+    ) -> List[IncomeStatementType]:
         """
         The function `get_income_statement_annual` retrieves annual income statement data for a given
         stock symbol and returns a manipulated version of the data.
@@ -677,13 +757,16 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of IncomeStatementType objects.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_income_statement_annual(symbol)
         data: DataFrame
         return self.manipulate_is(data)
 
     @strawberry.field
-    def get_income_statement_quarterly(self, symbol: str) -> List[IncomeStatementType]:
+    def get_income_statement_quarterly(
+        self, info: Info, symbol: str
+    ) -> List[IncomeStatementType]:
         """
         The function `get_income_statement_quarterly` retrieves quarterly income statement data for a
         given stock symbol and returns a manipulated version of the data.
@@ -692,7 +775,110 @@ class FundementalDataType:
         :type symbol: str
         :return: a list of IncomeStatementType objects.
         """
+        vantage = Vantage(info)
         # !! pylint: disable=W0632
         data, _ = vantage.fundamental_data.get_income_statement_quarterly(symbol)
         data: DataFrame
         return self.manipulate_is(data)
+
+    @_make_api_call
+    def _global_quote(self, *args, **kwargs: Unpack[API_Parameters[GlobalQuoteSchema]]):
+        """
+        The function `_global_quote` is a decorator that makes an API call to the Alpha Vantage API
+        """
+        return ("Global Quote", None, None)
+
+    @strawberry.field
+    def global_quote(self, info: Info, symbol: str) -> GlobalQuoteType:
+        """Returns the global quote for a given stock symbol."""
+
+        as_model = self._global_quote(
+            info=info,
+            symbol=symbol,
+            function="GLOBAL_QUOTE",
+            datatype="json",
+            validation_model=GlobalQuoteSchema,
+        )
+
+        # !! pylint: disable=no-member
+        as_type: GlobalQuoteType = GlobalQuoteType.from_pydantic(as_model)
+        return as_type
+
+
+# @strawberry.type
+# class AlphaVantageAPIKey:
+#     """
+#     The class `AlphaVantageAPIKey` represents an AlphaVantage API key.
+#     """
+
+#     api_key: str = strawberry.field(description="The API key.", name="apikey")
+
+
+@strawberry.type
+class QueryType:
+    """
+    The Query class defines the root query fields for the GraphQL schema. It provides methods for
+    - `getFundementalData`
+    - `getCrypto`
+    - `getTechnicalAverages`
+    - `getTimeSeries`
+    - `getTimeSeriesAdjusted`
+    """
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_fundemental_data(self) -> FundementalDataType:
+        """
+        Returns the fundamental data for the stocks.
+
+        Returns:
+            FundementalDataType: The fundamental data for the stocks.
+        """
+        return FundementalDataType()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_crypto(self) -> CRYPTO_SERIES:
+        """
+        Returns the crypto data for the stocks.
+
+        Returns:
+            CRYPTO_SERIES: The crypto data for the stocks.
+        """
+        return CRYPTO_SERIES()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_technical_averages(self) -> TECHNICAL_AVERAGES:
+        """
+        Returns the technical averages for the stocks.
+
+        Returns:
+            TECHNICAL_AVERAGES: The technical averages for the stocks.
+        """
+
+        return TECHNICAL_AVERAGES()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_time_series(self) -> TIME_SERIES:
+        """
+        Returns the time series data for the stocks.
+
+        Returns:
+            TIME_SERIES: The time series data for the stocks.
+        """
+        return TIME_SERIES()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_time_series_adjusted(self) -> TIME_SERIES_ADJUSTED:
+        """
+        Returns the adjusted time series data for the stocks.
+
+        Returns:
+            TIME_SERIES_ADJUSTED: The adjusted time series data for the stocks.
+        """
+        return TIME_SERIES_ADJUSTED()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def test(self) -> bool:
+        """
+        A testing endpoint.
+        """
+        return True

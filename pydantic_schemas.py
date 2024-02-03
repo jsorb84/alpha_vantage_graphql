@@ -78,6 +78,25 @@ class IncomeStatementSchema(BaseModel):
     net_income: str = Field(title="Net Income", validation_alias="netIncome")
 
 
+class GlobalQuoteSchema(BaseModel):
+    symbol: str = Field(title="Symbol", validation_alias="01. symbol")
+    open: str = Field(title="Open", validation_alias="02. open")
+    high: str = Field(title="High", validation_alias="03. high")
+    low: str = Field(title="Low", validation_alias="04. low")
+    price: str = Field(title="Price", validation_alias="05. price")
+    volume: str = Field(title="Volume", validation_alias="06. volume")
+    latest_trading_day: str = Field(
+        title="Latest Trading Day", validation_alias="07. latest trading day"
+    )
+    previous_close: str = Field(
+        title="Previous Close", validation_alias="08. previous close"
+    )
+    change: str = Field(title="Change", validation_alias="09. change")
+    change_percent: str = Field(
+        title="Change Percent", validation_alias="10. change percent"
+    )
+
+
 class CashFlowSchema(BaseModel):
     """The above code is defining a class with multiple fields representing financial data. Each field
     has a title and a validation alias. The fields can store values of type float or None. The class
