@@ -9,9 +9,10 @@
 > For a quick and simple setup, just spin up the Docket image! Your instance will be available at http://localhost/graphql - Make sure to provide your API Key as `AV_KEY` environment variable
 
 1. Install Requirements /w `pipenv` or `requirements.txt`
-2. Start the `uvicorn` server with `uvicorn app:app --reload`
-3. Navigate to [`http://localhost:8000/graphql`](http://localhost:8000/graphql)
-4. Add the `ALPHAVANTAGE_API_KEY` header in the GraphQL Explorer
+2. Add `AV_URL` environment variable to `https://www.alphavantage.co/query`
+3. Start the `uvicorn` server with `uvicorn app:app --reload`
+4. Navigate to [`http://localhost:8000/graphql`](http://localhost:8000/graphql)
+5. Add the `ALPHAVANTAGE_API_KEY` header in the GraphQL Explorer
 
 ## Available APIs (currently)
 
