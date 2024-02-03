@@ -1,0 +1,281 @@
+type BalanceSheetType {
+  fiscalDateEnding: String!
+  reportedCurrency: String!
+  totalAssets: String!
+  totalCurrentAssets: String!
+  cashAndCashEquivalentsAtCarryingValue: String!
+  cashAndShortTermInvestments: String!
+  inventory: String!
+  currentNetReceivables: String!
+  totalNonCurrentAssets: String!
+  propertyPlantEquipment: String!
+  accumulatedDepreciationAmortizationPpe: String!
+  intangibleAssets: String!
+  intangibleAssetsExcludingGoodwill: String!
+  goodwill: String!
+  investments: String!
+  longTermInvestments: String!
+  shortTermInvestments: String!
+  otherCurrentAssets: String!
+  otherNonCurrentAssets: String!
+  totalLiabilities: String!
+  totalCurrentLiabilities: String!
+  currentAccountsPayable: String!
+  deferredRevenue: String!
+  currentDebt: String!
+  shortTermDebt: String!
+  totalNonCurrentLiabilities: String!
+  capitalLeaseObligations: String!
+  longTermDebt: String!
+  currentLongTermDebt: String!
+  longTermDebtNoncurrent: String!
+  shortLongTermDebtTotal: String!
+  otherCurrentLiabilities: String!
+  otherNonCurrentLiabilities: String!
+  totalShareholderEquity: String!
+  treasuryStock: String!
+  retainedEarnings: String!
+  commonStock: String!
+  commonStockSharesOutstanding: String!
+}
+
+type CRYPTOSeries {
+  exchangeRate(fromCurrency: String!, toCurrency: String!): CurrencyExchangeRateType!
+  intraday(symbol: String!, market: String! = "USD", interval: String! = "5min"): CryptoIntraday!
+}
+
+type CashFlowType {
+  fiscalDateEnding: String!
+  reportedCurrency: String!
+  operatingCashFlow: String!
+  paymentsForOperatingActivities: String!
+  proceedsFromOperatingActivities: String!
+  changeInOperatingLiabilities: String!
+  changeInOperatingAssets: String!
+  depreciationDepletionAndAmortization: String!
+  capitalExpenditures: String!
+  changeInReceivables: String!
+  changeInInventory: String!
+  profitLoss: String!
+  cashflowFromInvestment: String!
+  cashflowFromFinancing: String!
+  proceedsFromRepaymentsOfShortTermDebt: String!
+  paymentsForRepurchaseOfCommonStock: String!
+  paymentsForRepurchaseOfEquity: String!
+  paymentsForRepurchaseOfPreferredStock: String!
+  dividendPayout: String!
+  dividendPayoutCommonStock: String!
+  dividendPayoutPreferredStock: String!
+  proceedsFromIssuanceOfCommonStock: String!
+  proceedsFromIssuanceOfLongTermDebtAndCapitalSecuritiesNet: String!
+  proceedsFromIssuanceOfPreferredStock: String!
+  proceedsFromRepurchaseOfEquity: String!
+  proceedsFromSaleOfTreasuryStock: String!
+  changeInCashAndCashEquivalents: String!
+  changeInExchangeRate: String!
+  netIncome: String!
+}
+
+type CryptoIntraday {
+  metadata: CryptoMetadataType!
+  series: [TimeSeriesInterface!]!
+}
+
+type CryptoMetadataType {
+  information: String!
+  digitalCurrencyCode: String!
+  digitalCurrencyName: String!
+  marketCode: String!
+  marketName: String!
+  lastRefreshed: String!
+  interval: String!
+  outputSize: String!
+  timeZone: String!
+}
+
+type CurrencyExchangeRateType {
+  fromCurrencyCode: String!
+  fromCurrencyName: String!
+  toCurrencyCode: String!
+  toCurrencyName: String!
+  exchangeRate: String!
+  lastRefreshed: String!
+  timezone: String!
+  bidPrice: String!
+  askPrice: String!
+}
+
+type FundementalDataType {
+  getBalanceSheetAnnual(symbol: String!): [BalanceSheetType!]!
+  getBalanceSheetQuarterly(symbol: String!): [BalanceSheetType!]!
+  getCompanyOverview(symbol: String!): OverviewType!
+  getCashFlowAnnual(symbol: String!): [CashFlowType!]!
+  getCashFlowQuarterly(symbol: String!): [CashFlowType!]!
+  getIncomeStatementAnnual(symbol: String!): [IncomeStatementType!]!
+  getIncomeStatementQuarterly(symbol: String!): [IncomeStatementType!]!
+  globalQuote(symbol: String!): GlobalQuoteType!
+}
+
+type GlobalQuoteType {
+  symbol: String!
+  open: String!
+  high: String!
+  low: String!
+  price: String!
+  volume: String!
+  latestTradingDay: String!
+  previousClose: String!
+  change: String!
+  changePercent: String!
+}
+
+type IncomeStatementType {
+  fiscalDateEnding: String!
+  reportedCurrency: String!
+  grossProfit: String!
+  totalRevenue: String!
+  costOfRevenue: String!
+  costOfGoodsServicesSold: String!
+  operatingIncome: String!
+  sellingGeneralAndAdministrative: String!
+  researchAndDevelopment: String!
+  operatingExpenses: String!
+  investmentIncomeNet: String!
+  netInterestIncome: String!
+  interestIncome: String!
+  interestExpense: String!
+  nonInterestIncome: String!
+  otherNonOperatingIncome: String!
+  depreciation: String!
+  depreciationAndAmortization: String!
+  incomeBeforeTax: String!
+  incomeTaxExpense: String!
+  interestAndDebtExpense: String!
+  netIncomeFromContinuingOperations: String!
+  comprehensiveIncomeNetOfTax: String!
+  ebit: String!
+  ebitda: String!
+  netIncome: String!
+}
+
+type OverviewType {
+  symbol: String!
+  assetType: String!
+  name: String!
+  description: String!
+  cik: String!
+  exchange: String!
+  currency: String!
+  country: String!
+  sector: String!
+  industry: String!
+  address: String!
+  fiscalYearEnd: String!
+  latestQuarter: String!
+  marketCapitalization: String!
+  ebitda: String!
+  peRatio: String!
+  pegRatio: String!
+  bookValue: String!
+  dividendPerShare: String!
+  dividendYield: String!
+  eps: String!
+  revenuePerShareTtm: String!
+  profitMargin: String!
+  operatingMarginTtm: String!
+  returnOnAssetsTtm: String!
+  returnOnEquityTtm: String!
+  revenueTtm: String!
+  grossProfitTtm: String!
+  dilutedEpsTtm: String!
+  quarterlyEarningsGrowthYoy: String!
+  quarterlyRevenueGrowthYoy: String!
+  analystTargetPrice: String!
+  trailingPe: String!
+  forwardPe: String!
+  priceToSalesRatioTtm: String!
+  priceToBookRatio: String!
+  evToRevenue: String!
+  evToEbitda: String!
+  beta: String!
+  weekHigh52: String!
+  weekLow52: String!
+  dayMovingAverage50: String!
+  dayMovingAverage200: String!
+  sharesOutstanding: String!
+  dividendDate: String!
+  exDividendDate: String!
+}
+
+type Query {
+  getFundementalData: FundementalDataType!
+  getCrypto: CRYPTOSeries!
+  getTechnicalAverages: TECHNICALAverages!
+  getTimeSeries: TimeSeries!
+  getTimeSeriesAdjusted: TimeSeriesAdjusted!
+  test: Boolean!
+}
+
+type TECHNICALAverages {
+  sma(symbol: String!, interval: String! = "weekly", timePeriod: Int! = 60, seriesType: String! = "open"): TechIndicator!
+  ema(symbol: String!, interval: String! = "weekly", timePeriod: Int! = 60, seriesType: String! = "open"): TechIndicator!
+  wma(symbol: String!, interval: String! = "weekly", timePeriod: Int! = 60, seriesType: String! = "open"): TechIndicator!
+  dema(symbol: String!, interval: String! = "weekly", timePeriod: Int! = 60, seriesType: String! = "open"): TechIndicator!
+  tema(symbol: String!, interval: String! = "weekly", timePeriod: Int! = 60, seriesType: String! = "open"): TechIndicator!
+}
+
+type TechIndicator {
+  MetaData: TechIndicatorMetadataType!
+  Analysis: [TechIndicatorAnalysis!]!
+}
+
+type TechIndicatorAnalysis {
+  """The date of the data."""
+  date: String!
+
+  """The average of the data."""
+  average: String!
+}
+
+type TechIndicatorMetadataType {
+  symbol: String!
+  indicator: String!
+  lastRefreshed: String!
+  interval: String!
+  timePeriod: Int!
+  seriesType: String!
+  timeZone: String!
+}
+
+type TimeSeries {
+  intraday(symbol: String!, interval: String! = "15min", outputsize: String! = "compact"): [TimeSeriesInterface!]!
+  daily(symbol: String!, outputsize: String! = "compact"): [TimeSeriesInterface!]!
+  monthly(symbol: String!): [TimeSeriesInterface!]!
+  weekly(symbol: String!): [TimeSeriesInterface!]!
+}
+
+type TimeSeriesAdjusted {
+  daily(symbol: String!, outputsize: String! = "compact"): [TimeSeriesAdjustedInterface!]!
+  monthly(symbol: String!): [TimeSeriesAdjustedInterface!]!
+  weekly(symbol: String!): [TimeSeriesAdjustedInterface!]!
+}
+
+type TimeSeriesAdjustedInterface {
+  date: String!
+  open: Float!
+  high: Float!
+  low: Float!
+  close: Float!
+  volume: Float!
+  adjustedClose: Float!
+  dividendAmount: Float!
+}
+
+type TimeSeriesInterface {
+  date: String!
+  open: Float!
+  high: Float!
+  low: Float!
+  close: Float!
+  volume: Float!
+}
