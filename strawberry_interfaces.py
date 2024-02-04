@@ -1,23 +1,14 @@
-import strawberry
-import dataclasses
+from typing import Literal, Annotated, List
 from os import getenv
-from typing import Optional, Required, TypedDict
+import strawberry
 from pydantic import BaseModel, Field
 from strawberry.types.info import Info as _Info, RootValueType
 from strawberry_permissions import GraphQLContext
 
-# @dataclasses.dataclass
-# class API_Parameters[M: BaseModel | None]:
-#     """Wrapper for all Alpha Vantage APIs"""
 
-#     apikey: str = dataclasses.field(default=getenv("AV_KEY"))
-#     function: str = dataclasses.field(default="TIME_SERIES_WEEKLY")
-#     symbol: str | None = dataclasses.field(default=None)
-#     interval: str | None = dataclasses.field(default=None)
-#     maturity: str | None = dataclasses.field(default=None)
-#     datatype: str = dataclasses.field(default="json")
-#     validation_model: type[M] | None = dataclasses.field(default=None)
 type Info = _Info[GraphQLContext, RootValueType]
+type Intervals = Literal["monthly", "annual", "quarterly"]
+type IntervalType = Annotated[Intervals, strawberry.union("IntervalType")]
 
 
 class API_Parameters[M: BaseModel](BaseModel):
@@ -34,6 +25,108 @@ class API_Parameters[M: BaseModel](BaseModel):
 
 
 @strawberry.type
+class CommodoitiesDataInterface:
+    """
+    This class represents the data for a commodity.
+
+    Args:
+        date (str): The date of the data point.
+        value (str): The value of the commodity on the given date.
+    """
+
+    date: str = strawberry.field(default="XXXX-XX-XX")
+    value: str = strawberry.field(default="0.00")
+
+
+@strawberry.type
+class CommoditiesInterface:
+    """
+    This class represents a commodity.
+
+    Args:
+        name (str): The name of the commodity.
+        interval (str): The interval of the data points.
+        unit (str): The unit of the commodity.
+        data (List[CommoditiesDataInterface]): The list of data points for the commodity.
+    """
+
+    name: str = strawberry.field(default="")
+    interval: str = strawberry.field(default="monthly")
+    unit: str = strawberry.field(default="")
+    data: List[CommodoitiesDataInterface] = strawberry.field(default_factory=list)
+
+
+@strawberry.type
+class DigitalCurrencyMetadata:
+    """
+    This class represents the metadata for a digital currency.
+
+    Args:
+        information (str): A general overview of the digital currency.
+        digital_currency_code (str): The code for the digital currency.
+        digital_currency_name (str): The name of the digital currency.
+        market_code (str): The code for the market where the digital currency is traded.
+        market_name (str): The name of the market where the digital currency is traded.
+        last_updated (str): The date and time when the metadata was last updated.
+        time_zone (str): The time zone of the market where the digital currency is traded.
+    """
+
+    information: str = strawberry.field(default="")
+    digital_currency_code: str = strawberry.field(default="")
+    digital_currency_name: str = strawberry.field(default="")
+    market_code: str = strawberry.field(default="")
+    market_name: str = strawberry.field(default="")
+    last_updated: str = strawberry.field(default="")
+    time_zone: str = strawberry.field(default="")
+
+
+@strawberry.type
+class DigitalCurrencySeries:
+    """
+    This class represents the intraday data for a digital currency.
+
+    Args:
+        date (str): The date of the data point.
+        open_market (float): The open price of the digital currency in the base currency of the market.
+        open_usd (float): The open price of the digital currency in USD.
+        high_market (float): The highest price of the digital currency in the base currency of the market.
+        high_usd (float): The highest price of the digital currency in USD.
+        low_market (float): The lowest price of the digital currency in the base currency of the market.
+        low_usd (float): The lowest price of the digital currency in USD.
+        close_market (float): The closing price of the digital currency in the base currency of the market.
+        close_usd (float): The closing price of the digital currency in USD.
+        volume (float): The trading volume of the digital currency.
+        market_cap_usd (float): The market capitalization of the digital currency in USD.
+    """
+
+    date: str
+    open_market: float = strawberry.field(default=0.0)
+    open_usd: float = strawberry.field(default=0.0)
+    high_market: float = strawberry.field(default=0.0)
+    high_usd: float = strawberry.field(default=0.0)
+    low_market: float = strawberry.field(default=0.0)
+    low_usd: float = strawberry.field(default=0.0)
+    close_market: float = strawberry.field(default=0.0)
+    close_usd: float = strawberry.field(default=0.0)
+    volume: float = strawberry.field(default=0.0)
+    market_cap_usd: float = strawberry.field(default=0.0)
+
+
+@strawberry.type
+class DigitalCurrencyInterface:
+    """
+    This class represents a digital currency.
+
+    Args:
+        metadata (DigitalCurrencyMetadata): The metadata for the digital currency.
+        series (List[TimeSeriesInterface]): The list of time series data for the digital currency.
+    """
+
+    metadata: DigitalCurrencyMetadata = strawberry.field()
+    series: List[DigitalCurrencySeries] = strawberry.field(default_factory=list)
+
+
+@strawberry.type
 class TimeSeriesInterface:
     """The TimeSeriesType class represents a time series data with open, high, low, close, and volume
     attributes."""
@@ -44,6 +137,20 @@ class TimeSeriesInterface:
     low: float = strawberry.field()
     close: float = strawberry.field()
     volume: float = strawberry.field()
+
+
+@strawberry.type
+class DigitalCurrencyIntradayInterface:
+    """
+    This class represents the intraday data for a digital currency.
+
+    Args:
+        metadata (DigitalCurrencyMetadata): The metadata for the digital currency.
+        series (List[TimeSeriesInterface]): The list of time series data for the digital currency.
+    """
+
+    metadata: DigitalCurrencyMetadata = strawberry.field()
+    series: List[TimeSeriesInterface] = strawberry.field(default_factory=list)
 
 
 @strawberry.type

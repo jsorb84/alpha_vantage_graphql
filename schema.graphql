@@ -39,9 +39,26 @@ type BalanceSheetType {
   commonStockSharesOutstanding: String!
 }
 
+type COMMODOTIES {
+  corn(interval: String! = "monthly"): CommoditiesInterface!
+  crudeOilWti(interval: String! = "monthly"): CommoditiesInterface!
+  crudeOilBrent(interval: String! = "monthly"): CommoditiesInterface!
+  naturalGas(interval: String! = "monthly"): CommoditiesInterface!
+  copper(interval: String! = "monthly"): CommoditiesInterface!
+  aluminum(interval: String! = "monthly"): CommoditiesInterface!
+  wheat(interval: String! = "monthly"): CommoditiesInterface!
+  cotton(interval: String! = "monthly"): CommoditiesInterface!
+  sugar(interval: String! = "monthly"): CommoditiesInterface!
+  coffee(interval: String! = "monthly"): CommoditiesInterface!
+  allCommodities(interval: String! = "monthly"): CommoditiesInterface!
+}
+
 type CRYPTOSeries {
   exchangeRate(fromCurrency: String!, toCurrency: String!): CurrencyExchangeRateType!
-  intraday(symbol: String!, market: String! = "USD", interval: String! = "5min"): CryptoIntraday!
+  monthly(symbol: String! = "BTC", market: String! = "CNY"): DigitalCurrencyInterface!
+  weekly(symbol: String! = "BTC", market: String! = "CNY"): DigitalCurrencyInterface!
+  daily(symbol: String! = "BTC", market: String! = "CNY"): DigitalCurrencyInterface!
+  intraday(symbol: String! = "BTC", interval: String! = "5min"): DigitalCurrencyIntradayInterface!
 }
 
 type CashFlowType {
@@ -76,21 +93,16 @@ type CashFlowType {
   netIncome: String!
 }
 
-type CryptoIntraday {
-  metadata: CryptoMetadataType!
-  series: [TimeSeriesInterface!]!
+type CommoditiesInterface {
+  name: String!
+  interval: String!
+  unit: String!
+  data: [CommodoitiesDataInterface!]!
 }
 
-type CryptoMetadataType {
-  information: String!
-  digitalCurrencyCode: String!
-  digitalCurrencyName: String!
-  marketCode: String!
-  marketName: String!
-  lastRefreshed: String!
-  interval: String!
-  outputSize: String!
-  timeZone: String!
+type CommodoitiesDataInterface {
+  date: String!
+  value: String!
 }
 
 type CurrencyExchangeRateType {
@@ -103,6 +115,53 @@ type CurrencyExchangeRateType {
   timezone: String!
   bidPrice: String!
   askPrice: String!
+}
+
+type DigitalCurrencyInterface {
+  metadata: DigitalCurrencyMetadata!
+  series: [DigitalCurrencySeries!]!
+}
+
+type DigitalCurrencyIntradayInterface {
+  metadata: DigitalCurrencyMetadata!
+  series: [TimeSeriesInterface!]!
+}
+
+type DigitalCurrencyMetadata {
+  information: String!
+  digitalCurrencyCode: String!
+  digitalCurrencyName: String!
+  marketCode: String!
+  marketName: String!
+  lastUpdated: String!
+  timeZone: String!
+}
+
+type DigitalCurrencySeries {
+  date: String!
+  openMarket: Float!
+  openUsd: Float!
+  highMarket: Float!
+  highUsd: Float!
+  lowMarket: Float!
+  lowUsd: Float!
+  closeMarket: Float!
+  closeUsd: Float!
+  volume: Float!
+  marketCapUsd: Float!
+}
+
+type ECONOMICIndicators {
+  realGdp(interval: String! = "annual"): CommoditiesInterface!
+  realGdpPerCapita: CommoditiesInterface!
+  treasuryYield(interval: String! = "monthly", maturity: String! = "10year"): CommoditiesInterface!
+  federalFundsRate(interval: String! = "monthly"): CommoditiesInterface!
+  cpi(interval: String! = "monthly"): CommoditiesInterface!
+  inflation: CommoditiesInterface!
+  retailSales: CommoditiesInterface!
+  durableGoods: CommoditiesInterface!
+  unemployment: CommoditiesInterface!
+  nonFarmPayroll(interval: String! = "monthly"): CommoditiesInterface!
 }
 
 type FundementalDataType {
@@ -208,6 +267,8 @@ type OverviewType {
 }
 
 type Query {
+  getCommodoties: COMMODOTIES!
+  getEconomicIndicators: ECONOMICIndicators!
   getFundementalData: FundementalDataType!
   getCrypto: CRYPTOSeries!
   getTechnicalAverages: TECHNICALAverages!

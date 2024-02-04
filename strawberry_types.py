@@ -6,6 +6,9 @@ from strawberry_interfaces import (
     TimeSeriesAdjustedInterface,
     TimeSeriesInterface,
     API_Parameters,
+    CommoditiesInterface,
+    DigitalCurrencyInterface,
+    DigitalCurrencyIntradayInterface,
 )
 from strawberry_permissions import GraphQLContext
 from strawberry_permissions import IsAuthenticated
@@ -19,7 +22,12 @@ from pydantic_schemas import (
     BalanceSheetSchema,
     GlobalQuoteSchema,
 )
-from decorators import _make_api_call
+from decorators import (
+    _make_api_call,
+    _extract_commodoties,
+    _extract_digital_currencies,
+    _extract_crypto_intraday,
+)
 from pandas import DataFrame
 
 type Intervals = Literal["1min", "5min", "15min", "30min", "60min"]
@@ -485,69 +493,58 @@ class CRYPTO_SERIES:
         as_gql = CurrencyExchangeRateType.from_pydantic(as_model)
         return as_gql
 
+    @_extract_digital_currencies
     @_make_api_call
-    def _get_intraday(
-        self, *args, **kwargs: Unpack[API_Parameters[TimeSeriesInterface]]
-    ):
-        """
-        The function `_get_intraday` is a decorator that makes an API call to the Alpha Vantage API
-        """
+    def _get(self, *args, **kwargs: Unpack[API_Parameters]):
         return (None, None, None)
+
+    @_extract_crypto_intraday
+    @_make_api_call
+    def _get_intraday(self, *args, **kwargs: Unpack[API_Parameters]):
+        return (None, None, None)
+
+    @strawberry.field
+    def monthly(
+        self, info: Info, symbol: str = "BTC", market: str = "CNY"
+    ) -> DigitalCurrencyInterface:
+        a = self._get(
+            function="DIGITAL_CURRENCY_MONTHLY", symbol=symbol, market=market, info=info
+        )
+        return a
+
+    @strawberry.field
+    def weekly(
+        self, info: Info, symbol: str = "BTC", market: str = "CNY"
+    ) -> DigitalCurrencyInterface:
+        a = self._get(
+            function="DIGITAL_CURRENCY_WEEKLY", symbol=symbol, market=market, info=info
+        )
+        return a
+
+    @strawberry.field
+    def daily(
+        self, info: Info, symbol: str = "BTC", market: str = "CNY"
+    ) -> DigitalCurrencyInterface:
+        a = self._get(
+            function="DIGITAL_CURRENCY_DAILY", symbol=symbol, market=market, info=info
+        )
+        return a
 
     @strawberry.field
     def intraday(
         self,
         info: Info,
-        symbol: str,
-        market: str = "USD",
+        symbol: str = "BTC",
         interval: str = "5min",
-    ) -> CryptoIntraday:
-        """
-        Returns the intraday data for a given cryptocurrency.
-
-        :param info: The info parameter is a context object that contains information about the
-        request, including the user's authentication credentials.
-        :type info: Info
-        :param symbol: The symbol parameter is a string that represents the cryptocurrency symbol
-        for which you want to retrieve intraday data.
-        :type symbol: str
-        :param market: The "market" parameter is a string that represents the fiat currency in which
-        you want the data to be returned. It can be set to any of the supported fiat currencies,
-        including "USD", "EUR", "GBP", and "JPY". The default value is "USD".
-        :type market: str
-        :param interval: The "interval" parameter specifies the time interval between each data point
-        in the intraday time series. It can be set to values like "1min", "5min", "15min", "30min",
-        or "60min", depending on the desired granularity of the data. The default value is "5min".
-        :type interval: str
-        :return: The function returns a CryptoIntraday object, which contains the metadata and the
-        time series data.
-        """
-        data = self._get_intraday(
-            info=info,
-            symbol=symbol,
+    ) -> DigitalCurrencyIntradayInterface:
+        a = self._get_intraday(
             function="CRYPTO_INTRADAY",
+            symbol=symbol,
+            market="USD",
+            info=info,
             interval=interval,
-            market=market,
         )
-        md_schema = CryptoMetadataSchema.model_validate(
-            data["Meta Data"]  # !! pylint: disable=E1126
-        )
-        ts_list: dict[str, dict[str, str]] = data[f"Time Series Crypto ({interval})"]
-        ts_items = ts_list.items()
-        l: List[TimeSeriesInterface] = [
-            TimeSeriesInterface(
-                date=k,
-                open=float(v["1. open"]),
-                close=float(v["4. close"]),
-                high=float(v["2. high"]),
-                low=float(v["3. low"]),
-                volume=float(v["5. volume"]),
-            )
-            for k, v in ts_items
-        ]
-        final = CryptoIntraday(metadata=md_schema, series=l)
-
-        return final
+        return a
 
 
 @strawberry.experimental.pydantic.type(IncomeStatementSchema, all_fields=True)
@@ -591,6 +588,10 @@ class GlobalQuoteType:
 
 @strawberry.type
 class FundementalDataType:
+    """
+    The class `FundementalDataType` defines several methods that return fundamental data for a given stock
+    """
+
     def manipulate_cf(self, data: DataFrame) -> List[CashFlowType]:
         """
         The function `manipulate_cf` takes a DataFrame as input, converts it to a dictionary, validates the
@@ -782,7 +783,7 @@ class FundementalDataType:
         return self.manipulate_is(data)
 
     @_make_api_call
-    def _global_quote(self, *args, **kwargs: Unpack[API_Parameters[GlobalQuoteSchema]]):
+    def _global_quote(self, *args, **kwargs: Unpack[API_Parameters]):
         """
         The function `_global_quote` is a decorator that makes an API call to the Alpha Vantage API
         """
@@ -805,13 +806,413 @@ class FundementalDataType:
         return as_type
 
 
-# @strawberry.type
-# class AlphaVantageAPIKey:
-#     """
-#     The class `AlphaVantageAPIKey` represents an AlphaVantage API key.
-#     """
+@strawberry.type
+class ECONOMIC_INDICATORS:
+    """
+    The EconomicIndicators class defines several methods that return economic indicators.
 
-#     api_key: str = strawberry.field(description="The API key.", name="apikey")
+    """
+
+    @_extract_commodoties
+    @_make_api_call
+    def _get(self, *args, **kwargs: Unpack[API_Parameters]):
+        """
+        This method is a decorator that makes an API call to the Alpha Vantage API.
+        """
+        return (None, None, None)
+
+    @strawberry.field
+    def real_gdp(self, info: Info, interval: str = "annual") -> CommoditiesInterface:
+        """
+        This method retrieves real gdp data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "quarterly", "annual". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The real gdp data, represented as a GraphQL object.
+        """
+        n = self._get(function="REAL_GDP", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def real_gdp_per_capita(self, info: Info) -> CommoditiesInterface:
+        """
+        This method retrieves real gdp per capita data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+
+
+        Returns:
+            CommoditiesInterface: The real gdp per capita data, represented as a GraphQL object.
+        """
+        n = self._get(function="REAL_GDP_PER_CAPITA", info=info)
+        return n
+
+    @strawberry.field
+    def treasury_yield(
+        self, info: Info, interval: str = "monthly", maturity: str = "10year"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves treasury yield data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+            maturity (str, optional): The maturity parameter specifies the maturity range. Available values
+            are "10year", "5year", "7year", "2year", "30year", "3month". The default value is "10year".
+
+        Returns:
+            CommoditiesInterface: The treasury yield data, represented as a GraphQL object.
+        """
+        n = self._get(
+            function="TREASURY_YIELD", info=info, interval=interval, maturity=maturity
+        )
+        return n
+
+    @strawberry.field
+    def federal_funds_rate(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves federal funds rate data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The federal funds rate data, represented as a GraphQL object.
+        """
+        n = self._get(function="FEDERAL_FUNDS_RATE", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def cpi(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves cpi data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "monthly", "semiannual". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The cpi data, represented as a GraphQL object.
+        """
+        n = self._get(function="CPI", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def inflation(self, info: Info) -> CommoditiesInterface:
+        """
+        This method retrieves inflation data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+
+        Returns:
+            CommoditiesInterface: The inflation data, represented as a GraphQL object.
+        """
+        n = self._get(function="INFLATION", info=info)
+        return n
+
+    @strawberry.field
+    def retail_sales(self, info: Info) -> CommoditiesInterface:
+        """
+        This method retrieves retail sales data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+
+        Returns:
+            CommoditiesInterface: The retail sales data, represented as a GraphQL object.
+        """
+        n = self._get(function="RETAIL_SALES", info=info)
+        return n
+
+    @strawberry.field
+    def durable_goods(self, info: Info) -> CommoditiesInterface:
+        """
+        This method retrieves durable goods data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+
+        Returns:
+            CommoditiesInterface: The durable goods data, represented as a GraphQL object.
+        """
+        n = self._get(function="DURABLES", info=info)
+        return n
+
+    @strawberry.field
+    def unemployment(self, info: Info) -> CommoditiesInterface:
+        """
+        This method retrieves unemployment data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+
+        Returns:
+            CommoditiesInterface: The unemployment data, represented as a GraphQL object.
+        """
+        n = self._get(function="UNEMPLOYMENT", info=info)
+        return n
+
+    @strawberry.field
+    def non_farm_payroll(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """Get non farm payroll data.
+
+        Args:
+            info (Info): Information from GraphQL
+            interval (str, optional): Defaults to "monthly".
+
+        Returns:
+            CommoditiesInterface
+        """
+        n = self._get(function="NONFARM_PAYROLL", info=info, interval=interval)
+        return n
+
+
+@strawberry.type
+class COMMODOTIES:
+    """
+    This class provides methods for retrieving commodities data from the Alpha Vantage API.
+    """
+
+    @_extract_commodoties
+    @_make_api_call
+    def _get(self, *args, **kwargs: Unpack[API_Parameters]):
+        """
+        This method is a decorator that makes an API call to the Alpha Vantage API.
+        """
+        return (None, None, None)
+
+    @strawberry.field
+    def corn(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves corn data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CornType: The corn data, represented as a GraphQL object.
+        """
+        n = self._get(function="CORN", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def crude_oil_wti(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves WTI crude oil data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The WTI crude oil data, represented as a GraphQL object.
+        """
+        n = self._get(function="WTI", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def crude_oil_brent(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves Brent crude oil data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The Brent crude oil data, represented as a GraphQL object.
+        """
+        n = self._get(function="BRENT", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def natural_gas(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves natural gas data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The natural gas data, represented as a GraphQL object.
+        """
+        n = self._get(function="NATURAL_GAS", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def copper(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves copper data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The copper data, represented as a GraphQL object.
+        """
+        n = self._get(function="COPPER", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def aluminum(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves aluminum data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The aluminum data, represented as a GraphQL object.
+        """
+        n = self._get(function="ALUMINUM", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def wheat(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves wheat data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The wheat data, represented as a GraphQL object.
+        """
+        n = self._get(function="WHEAT", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def cotton(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves cotton data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The cotton data, represented as a GraphQL object.
+        """
+        n = self._get(function="COTTON", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def sugar(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves sugar data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The sugar data, represented as a GraphQL object.
+        """
+        n = self._get(function="SUGAR", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def coffee(self, info: Info, interval: str = "monthly") -> CommoditiesInterface:
+        """
+        This method retrieves coffee data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The coffee data, represented as a GraphQL object.
+        """
+        n = self._get(function="COFFEE", info=info, interval=interval)
+        return n
+
+    @strawberry.field
+    def all_commodities(
+        self, info: Info, interval: str = "monthly"
+    ) -> CommoditiesInterface:
+        """
+        This method retrieves all commodities data from the Alpha Vantage API.
+
+        Args:
+            info (Info): The info parameter is a context object that contains information about the
+                request, including the user's authentication credentials.
+            interval (str, optional): The interval parameter specifies the time interval for which
+                the data is retrieved. It can be set to "daily", "weekly", or "monthly". The default
+                value is "monthly".
+
+        Returns:
+            CommoditiesInterface: The all commodities data, represented as a GraphQL object.
+        """
+        n = self._get(function="ALL_COMMODITIES", info=info, interval=interval)
+        return n
 
 
 @strawberry.type
@@ -824,6 +1225,26 @@ class QueryType:
     - `getTimeSeries`
     - `getTimeSeriesAdjusted`
     """
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_commodoties(self) -> COMMODOTIES:
+        """
+        This method retrieves commodities data from the Alpha Vantage API.
+
+        Returns:
+            COMMODOTIES: The commodities data, represented as a GraphQL object.
+        """
+        return COMMODOTIES()
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    def get_economic_indicators(self) -> ECONOMIC_INDICATORS:
+        """
+        This method retrieves economic indicators data from the Alpha Vantage API.
+
+        Returns:
+            ECONOMIC_INDICATORS: The economic indicators data, represented as a GraphQL object.
+        """
+        return ECONOMIC_INDICATORS()
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     def get_fundemental_data(self) -> FundementalDataType:
