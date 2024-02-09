@@ -4,11 +4,144 @@ from requests import get
 from dotenv import load_dotenv
 from strawberry.types.info import Info as _Info, RootValueType
 from strawberry_permissions import GraphQLContext
-from strawberry_interfaces import TimeSeriesInterface, DigitalCurrencyIntradayInterface, CommoditiesInterface, CommodoitiesDataInterface, DigitalCurrencyInterface, DigitalCurrencyMetadata, DigitalCurrencySeries
+from strawberry_interfaces import TimeSeriesInterface, TimeSeriesData, TimeSeriesAdjustedData, TimeSeriesMetadata, TimeSeriesAdjustedInterface, DigitalCurrencyIntradayInterface, CommoditiesInterface, CommodoitiesDataInterface, DigitalCurrencyInterface, DigitalCurrencyMetadata, DigitalCurrencySeries
 
 type ReturnTuple = Tuple[str | None, str | None, str | None]
 type Info = _Info[GraphQLContext, RootValueType]
+type TSeries = TimeSeriesAdjustedInterface | TimeSeriesInterface
 load_dotenv()
+
+def _extract_time_series_adjusted[**P](fn: Callable[P, dict]) -> Callable[P, TimeSeriesAdjustedInterface]: #! pylint: disable=e0602
+    """
+    This function creates a wrapper function that extracts the adjusted time series data from the Alpha Vantage API response.
+
+    Args:
+        fn (Callable[P, dict]): The function that returns the Alpha Vantage API response.
+
+    Returns:
+        Callable[P, TimeSeriesAdjustedInterface]: A function that returns the adjusted time series data.
+    """
+    def _make_metadata(series: dict[str, str]) -> TimeSeriesMetadata:
+        """
+        This function creates a TimeSeriesMetadata object from the given series data.
+
+        Args:
+            series (dict[str, str]): The series data.
+
+        Returns:
+            TimeSeriesMetadata: The TimeSeriesMetadata object.
+        """
+        n = TimeSeriesMetadata(
+            information=series.get("1. Information"),
+            symbol=series.get("2. Symbol"),
+            last_refreshed=series.get("3. Last Refreshed"),
+            output_size=series.get("4. Output Size"),
+            time_zone=series.get("5. Time Zone"),
+        )
+        return n
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> TimeSeriesAdjustedInterface:
+        """
+        This function is the wrapper function that calls the given function and extracts the adjusted time series data.
+
+        Args:
+            args: The arguments to pass to the given function.
+            kwargs: The keyword arguments to pass to the given function.
+
+        Returns:
+            TimeSeriesAdjustedInterface: The adjusted time series data.
+        """
+        data: dict = fn(*args, **kwargs)
+        vals = list(data.values())
+        metadata: dict[str,str] = vals[0]
+        assert metadata is not None, "No Meta Data found"
+        series: dict[str, dict[str,float]] = vals[1]
+        assert series is not None, "No Time Series found"
+        series_items = series.items() # date -> {series}
+        made_metadata: TimeSeriesMetadata = _make_metadata(metadata)
+        l: List[TimeSeriesAdjustedData] = []
+        for date, time_series in series_items:
+            l.append(
+                TimeSeriesAdjustedData(
+                    date=date,
+                    open=time_series.get("1. open"),
+                    high=time_series.get("2. high"),
+                    low=time_series.get("3. low"),
+                    close=time_series.get("4. close"),
+                    adjusted_close=time_series.get("5. adjusted close"),
+                    volume=time_series.get("6. volume"),
+                    dividend_amount=time_series.get("7. dividend amount"),
+                )
+            )
+        return TimeSeriesAdjustedInterface(
+            metadata=made_metadata,
+            data=l
+        )
+    return wrapper
+
+def _extract_time_series[**P](fn: Callable[P, dict]) -> Callable[P, TimeSeriesInterface]: # !! pylint: disable=e0602
+    """
+    This function creates a wrapper function that extracts the time series data from the Alpha Vantage API response.
+
+    Args:
+        fn (Callable[P, dict]): The function that returns the Alpha Vantage API response.
+
+    Returns:
+        Callable[P, TimeSeriesInterface]: A function that returns the time series data.
+    """
+    def _make_metadata(series: dict[str, str]) -> TimeSeriesMetadata:
+        """
+        This function creates a TimeSeriesMetadata object from the given series data.
+
+        Args:
+            series (dict[str, str]): The series data.
+
+        Returns:
+            TimeSeriesMetadata: The TimeSeriesMetadata object.
+        """
+        n = TimeSeriesMetadata(
+            information=series.get("1. Information"),
+            symbol=series.get("2. Symbol"),
+            last_refreshed=series.get("3. Last Refreshed"),
+            output_size=series.get("4. Output Size"),
+            time_zone=series.get("5. Time Zone"),
+        )
+        return n
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> TimeSeriesInterface:
+        """
+        This function is the wrapper function that calls the given function and extracts the time series data.
+
+        Args:
+            args: The arguments to pass to the given function.
+            kwargs: The keyword arguments to pass to the given function.
+
+        Returns:
+            TimeSeriesInterface: The time series data.
+        """
+        data: dict = fn(*args, **kwargs)
+        vals = list(data.values())
+        metadata: dict[str,str] = vals[0]
+        assert metadata is not None, "No Meta Data found"
+        series: dict[str, dict[str,float]] = vals[1]
+        assert series is not None, "No Time Series found"
+        series_items = series.items() # date -> {series}
+        made_metadata: TimeSeriesMetadata = _make_metadata(metadata)
+        l: List[TimeSeriesData] = []
+        for date, time_series in series_items:
+            l.append(
+                TimeSeriesData(
+                    date=date,
+                    open=time_series.get("1. open"),
+                    high=time_series.get("2. high"),
+                    low=time_series.get("3. low"),
+                    close=time_series.get("4. close"),
+                    volume=time_series.get("5. volume"),
+                )
+            )
+        return TimeSeriesInterface(
+            metadata=made_metadata,
+            data=l
+        )
+    return wrapper
 
 def _extract_crypto_intraday[**P](fn: Callable[P, dict]) -> Callable[P, DigitalCurrencyIntradayInterface]:  #! pylint: disable=e0602
     """

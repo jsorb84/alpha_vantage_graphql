@@ -27,6 +27,8 @@ from decorators import (
     _extract_commodoties,
     _extract_digital_currencies,
     _extract_crypto_intraday,
+    _extract_time_series,
+    _extract_time_series_adjusted,
 )
 from pandas import DataFrame
 
@@ -48,32 +50,10 @@ class TIME_SERIES_ADJUSTED:
     field is decorated with `@strawberry.field` and has its own resolver function. The resolver functions
     """
 
-    def process_timeseries_adjusted(self, data: Literal) -> TimeSeriesAdjustedInterface:
-        """
-        The function `process_timeseries_adjusted` takes in a dictionary of time series data and returns a
-        list of `TimeSeriesAdjustedInterface` objects with the data converted to the appropriate data types.
-
-        :param data: The `data` parameter is a dictionary containing time series data. Each key in the
-        dictionary represents a day, and the corresponding value is another dictionary containing the
-        following keys:
-        :type data: Literal
-        :return: The function `process_timeseries_adjusted` returns a list of `TimeSeriesAdjustedInterface`
-        objects.
-        """
-        x = [
-            TimeSeriesAdjustedInterface(
-                date=day,
-                open=float(data[day]["1. open"]),
-                high=float(data[day]["2. high"]),
-                low=float(data[day]["3. low"]),
-                close=float(data[day]["4. close"]),
-                adjusted_close=float(data[day]["5. adjusted close"]),
-                volume=float(data[day]["6. volume"]),
-                dividend_amount=float(data[day]["7. dividend amount"]),
-            )
-            for day in data
-        ]
-        return x
+    @_extract_time_series_adjusted
+    @_make_api_call
+    def _get(self, *args, **kwargs: Unpack[API_Parameters]):
+        return (None, None, None)
 
     @strawberry.field
     def daily(
@@ -81,7 +61,7 @@ class TIME_SERIES_ADJUSTED:
         info: Info,
         symbol: str,
         outputsize: str = "compact",
-    ) -> List[TimeSeriesAdjustedInterface]:
+    ) -> TimeSeriesAdjustedInterface:
         """
         The function `daily` retrieves daily adjusted stock data for a given symbol and returns it as a
         processed time series.
@@ -95,13 +75,16 @@ class TIME_SERIES_ADJUSTED:
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
 
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_daily_adjusted(symbol, outputsize)
-        return self.process_timeseries_adjusted(data)
+        data: TimeSeriesAdjustedInterface = self._get(
+            info=info,
+            symbol=symbol,
+            outputsize=outputsize,
+            function="TIME_SERIES_DAILY_ADJUSTED",
+        )
+        return data
 
     @strawberry.field
-    def monthly(self, info: Info, symbol: str) -> List[TimeSeriesAdjustedInterface]:
+    def monthly(self, info: Info, symbol: str) -> TimeSeriesAdjustedInterface:
         """
         The function `monthly` retrieves monthly adjusted time series data for a given stock symbol and
         processes it.
@@ -112,13 +95,15 @@ class TIME_SERIES_ADJUSTED:
         :type symbol: str
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_monthly_adjusted(symbol)
-        return self.process_timeseries_adjusted(data)
+        data: TimeSeriesAdjustedInterface = self._get(
+            info=info,
+            symbol=symbol,
+            function="TIME_SERIES_MONTHLY_ADJUSTED",
+        )
+        return data
 
     @strawberry.field
-    def weekly(self, info: Info, symbol: str) -> List[TimeSeriesAdjustedInterface]:
+    def weekly(self, info: Info, symbol: str) -> TimeSeriesAdjustedInterface:
         """
         The function `weekly` retrieves weekly adjusted time series data for a given stock symbol and
         processes it.
@@ -129,10 +114,12 @@ class TIME_SERIES_ADJUSTED:
         :type symbol: str
         :return: a list of TimeSeriesAdjustedInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_weekly_adjusted(symbol)
-        return self.process_timeseries_adjusted(data)
+        data: TimeSeriesAdjustedInterface = self._get(
+            info=info,
+            symbol=symbol,
+            function="TIME_SERIES_WEEKLY_ADJUSTED",
+        )
+        return data
 
 
 @strawberry.type(name="TimeSeries")
@@ -156,29 +143,10 @@ class TIME_SERIES:
     `TimeSeriesInterface` objects.
     """
 
-    def process_timeseries(self, data: Literal) -> TimeSeriesInterface:
-        """
-        The function `process_timeseries` takes in a dictionary of time series data and converts it into a
-        list of `TimeSeriesInterface` objects.
-
-        :param data: The `data` parameter is expected to be a dictionary containing time series data. Each
-        key in the dictionary represents a day, and the corresponding value is another dictionary containing
-        the open, high, low, close, and volume values for that day
-        :type data: Literal
-        :return: a list of TimeSeriesInterface objects.
-        """
-        x = [
-            TimeSeriesInterface(
-                date=day,
-                open=float(data[day]["1. open"]),
-                high=float(data[day]["2. high"]),
-                low=float(data[day]["3. low"]),
-                close=float(data[day]["4. close"]),
-                volume=float(data[day]["5. volume"]),
-            )
-            for day in data
-        ]
-        return x
+    @_extract_time_series
+    @_make_api_call
+    def _get(self, *args, **kwargs: Unpack[API_Parameters]):
+        return (None, None, None)
 
     @strawberry.field
     def intraday(
@@ -187,7 +155,7 @@ class TIME_SERIES:
         symbol: str,
         interval: str = "15min",
         outputsize: str = "compact",
-    ) -> List[TimeSeriesInterface]:
+    ) -> TimeSeriesInterface:
         """
         The `intraday` function retrieves intraday stock data for a given symbol, interval, and output
         size, and then processes the data.
@@ -205,15 +173,19 @@ class TIME_SERIES:
         :type outputsize: str (optional)
         :return: a list of TimeSeriesInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_intraday(symbol, interval, outputsize)
-        return self.process_timeseries(data)
+        data: TimeSeriesInterface = self._get(
+            function="TIME_SERIES_INTRADAY",
+            info=info,
+            symbol=symbol,
+            interval=interval,
+            outputsize=outputsize,
+        )
+        return data
 
     @strawberry.field
     def daily(
         self, info: Info, symbol: str, outputsize: str = "compact"
-    ) -> List[TimeSeriesInterface]:
+    ) -> TimeSeriesInterface:
         """
         The function `daily` retrieves daily stock data for a given symbol and returns it as a list of
         time series.
@@ -226,13 +198,16 @@ class TIME_SERIES:
         :type outputsize: str (optional)
         :return: a list of TimeSeriesInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_daily(symbol, outputsize)
-        return self.process_timeseries(data)
+        data: TimeSeriesInterface = self._get(
+            function="TIME_SERIES_DAILY",
+            info=info,
+            symbol=symbol,
+            outputsize=outputsize,
+        )
+        return data
 
     @strawberry.field
-    def monthly(self, info: Info, symbol: str) -> List[TimeSeriesInterface]:
+    def monthly(self, info: Info, symbol: str) -> TimeSeriesInterface:
         """
         The function retrieves monthly time series data for a given stock symbol and processes it.
 
@@ -242,13 +217,13 @@ class TIME_SERIES:
         :type symbol: str
         :return: a list of TimeSeriesInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_monthly(symbol)
-        return self.process_timeseries(data)
+        data: TimeSeriesInterface = self._get(
+            function="TIME_SERIES_MONTHLY", info=info, symbol=symbol
+        )
+        return data
 
     @strawberry.field
-    def weekly(self, info: Info, symbol: str) -> List[TimeSeriesInterface]:
+    def weekly(self, info: Info, symbol: str) -> TimeSeriesInterface:
         """
         The function `weekly` retrieves weekly time series data for a given stock symbol and processes
         it.
@@ -259,10 +234,10 @@ class TIME_SERIES:
         :type symbol: str
         :return: a list of TimeSeriesInterface objects.
         """
-        vantage = Vantage(info)
-        # !! pylint: disable=W0632
-        data, _ = vantage.time_series.get_weekly(symbol)
-        return self.process_timeseries(data)
+        data: TimeSeriesInterface = self._get(
+            function="TIME_SERIES_WEEKLY", info=info, symbol=symbol
+        )
+        return data
 
 
 @strawberry.experimental.pydantic.type(TechIndicatorMetadataSchema, all_fields=True)

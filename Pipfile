@@ -7,11 +7,11 @@ name = "pypi"
 fastapi = {extras = ["all"], version = "*"}
 pydantic = "*"
 redis = "*"
-strawberry-graphql = {extras = ["fastapi"], version = "*"}
 alpha-vantage = "*"
 pandas = "*"
 multidict = "*"
 pytest = "*"
+strawberry-graphql = {extras = ["fastapi"], version = "*"}
 
 [dev-packages]
 

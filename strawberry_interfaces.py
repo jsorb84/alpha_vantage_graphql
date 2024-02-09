@@ -25,6 +25,21 @@ class API_Parameters[M: BaseModel](BaseModel):
 
 
 @strawberry.type
+class TimeSeriesMetadata:
+    information: str = strawberry.field(
+        description="Information about the time series."
+    )
+    symbol: str = strawberry.field(description="The symbol of the time series.")
+    last_refreshed: str = strawberry.field(
+        description="The last refreshed timestamp of the time series."
+    )
+    output_size: str = strawberry.field(
+        default="compact", description="The output size of the time series."
+    )
+    time_zone: str = strawberry.field(description="The time zone of the time series.")
+
+
+@strawberry.type
 class CommodoitiesDataInterface:
     """
     This class represents the data for a commodity.
@@ -127,7 +142,7 @@ class DigitalCurrencyInterface:
 
 
 @strawberry.type
-class TimeSeriesInterface:
+class TimeSeriesData:
     """The TimeSeriesType class represents a time series data with open, high, low, close, and volume
     attributes."""
 
@@ -150,11 +165,11 @@ class DigitalCurrencyIntradayInterface:
     """
 
     metadata: DigitalCurrencyMetadata = strawberry.field()
-    series: List[TimeSeriesInterface] = strawberry.field(default_factory=list)
+    series: List[TimeSeriesData] = strawberry.field(default_factory=list)
 
 
 @strawberry.type
-class TimeSeriesAdjustedInterface(TimeSeriesInterface):
+class TimeSeriesAdjustedData(TimeSeriesData):
     """
     The code is defining a class called `TimeSeriesAdjustedType` using the `@strawberry.type`
     decorator. Inside the class, there are several attributes defined using the `open`, `high`,
@@ -164,3 +179,15 @@ class TimeSeriesAdjustedInterface(TimeSeriesInterface):
 
     adjusted_close: float = strawberry.field()
     dividend_amount: float = strawberry.field()
+
+
+@strawberry.type
+class TimeSeriesInterface:
+    metadata: TimeSeriesMetadata = strawberry.field()
+    data: List[TimeSeriesData] = strawberry.field(default_factory=list)
+
+
+@strawberry.type
+class TimeSeriesAdjustedInterface:
+    metadata: TimeSeriesMetadata = strawberry.field()
+    data: List[TimeSeriesAdjustedData] = strawberry.field(default_factory=list)

@@ -124,7 +124,7 @@ type DigitalCurrencyInterface {
 
 type DigitalCurrencyIntradayInterface {
   metadata: DigitalCurrencyMetadata!
-  series: [TimeSeriesInterface!]!
+  series: [TimeSeriesData!]!
 }
 
 type DigitalCurrencyMetadata {
@@ -309,19 +309,19 @@ type TechIndicatorMetadataType {
 }
 
 type TimeSeries {
-  intraday(symbol: String!, interval: String! = "15min", outputsize: String! = "compact"): [TimeSeriesInterface!]!
-  daily(symbol: String!, outputsize: String! = "compact"): [TimeSeriesInterface!]!
-  monthly(symbol: String!): [TimeSeriesInterface!]!
-  weekly(symbol: String!): [TimeSeriesInterface!]!
+  intraday(symbol: String!, interval: String! = "15min", outputsize: String! = "compact"): TimeSeriesInterface!
+  daily(symbol: String!, outputsize: String! = "compact"): TimeSeriesInterface!
+  monthly(symbol: String!): TimeSeriesInterface!
+  weekly(symbol: String!): TimeSeriesInterface!
 }
 
 type TimeSeriesAdjusted {
-  daily(symbol: String!, outputsize: String! = "compact"): [TimeSeriesAdjustedInterface!]!
-  monthly(symbol: String!): [TimeSeriesAdjustedInterface!]!
-  weekly(symbol: String!): [TimeSeriesAdjustedInterface!]!
+  daily(symbol: String!, outputsize: String! = "compact"): TimeSeriesAdjustedInterface!
+  monthly(symbol: String!): TimeSeriesAdjustedInterface!
+  weekly(symbol: String!): TimeSeriesAdjustedInterface!
 }
 
-type TimeSeriesAdjustedInterface {
+type TimeSeriesAdjustedData {
   date: String!
   open: Float!
   high: Float!
@@ -332,11 +332,38 @@ type TimeSeriesAdjustedInterface {
   dividendAmount: Float!
 }
 
-type TimeSeriesInterface {
+type TimeSeriesAdjustedInterface {
+  metadata: TimeSeriesMetadata!
+  data: [TimeSeriesAdjustedData!]!
+}
+
+type TimeSeriesData {
   date: String!
   open: Float!
   high: Float!
   low: Float!
   close: Float!
   volume: Float!
+}
+
+type TimeSeriesInterface {
+  metadata: TimeSeriesMetadata!
+  data: [TimeSeriesData!]!
+}
+
+type TimeSeriesMetadata {
+  """Information about the time series."""
+  information: String!
+
+  """The symbol of the time series."""
+  symbol: String!
+
+  """The last refreshed timestamp of the time series."""
+  lastRefreshed: String!
+
+  """The output size of the time series."""
+  outputSize: String!
+
+  """The time zone of the time series."""
+  timeZone: String!
 }
